@@ -50,6 +50,14 @@ interface PlaylistDao {
     @Query("SELECT * FROM playlists ORDER BY name ASC")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
 
+    @Query("""
+    SELECT songs.* FROM songs
+    INNER JOIN playlist_song_crossref 
+    ON songs.path = playlist_song_crossref.songPath
+    WHERE playlist_song_crossref.playlistId = :playlistId
+""")
+    suspend fun getSongsFromPlaylist(playlistId: Long): List<SongEntity>
+
     @Query("UPDATE playlists SET name = :newName WHERE playlistId = :id")
     suspend fun renamePlaylist(id: Long, newName: String)
 

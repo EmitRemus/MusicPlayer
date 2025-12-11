@@ -8,6 +8,7 @@ import com.example.musicplayer.data.local.entities.SongEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.media3.common.Player
 
 data class NowPlayingMetadata(
     val title: String = "Unknown",
@@ -25,6 +26,15 @@ class PlayerHolder(context: Context){
 
     private var currentIndex = 0
 
+    init{
+        exoPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_ENDED) {
+                    nextInQueue()
+                }
+            }
+        })
+    }
 
     fun play(path: String) {
         val mediaItem = MediaItem.fromUri(Uri.parse(path))
@@ -34,6 +44,14 @@ class PlayerHolder(context: Context){
 
         updateMetadata(mediaItem)
     }
+    /** This plays back a list of songs for playing the whole playlist see getSongsFromPlaylist func */
+    fun playWholePlaylist(songs: List<SongEntity>) {
+        if (songs.isEmpty()) return
+        _queue.value = songs
+        currentIndex = 0
+        play(songs.first().path)
+    }
+
 
     fun pause() = exoPlayer.pause()
     fun resume() = exoPlayer.play()

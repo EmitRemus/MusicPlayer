@@ -20,23 +20,14 @@ class MusicService : Service() {
     private val queue: MutableList<String> = mutableListOf()
     private var currentIndex: Int = -1
 
-//    override fun onCreate() {
-//        super.onCreate()
-//        createNotificationChannel()
-//        MusicServiceHolder.service = this
-//        playerHolder = PlayerHolder(this)
-//
-//    }
+
     override fun onCreate() {
         super.onCreate()
         playerHolder = PlayerHolder(this)
         MusicServiceHolder.service = this
     }
 
-//    override fun onDestroy() {
-//        MusicServiceHolder.service = null
-//        super.onDestroy()
-//    }
+
     override fun onDestroy() {
         MusicServiceHolder.service = null
         playerHolder.release()
@@ -45,15 +36,7 @@ class MusicService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-////        // Required for foreground service
-//        startForeground(1, createNotification())
-//        val path = intent?.getStringExtra("path")
-//        if (path != null) {
-//            playerHolder.play(path)
-//        }
-//        return START_STICKY
-//    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Service will always run as a foreground service once started
         val notification = buildNotification()
@@ -61,21 +44,6 @@ class MusicService : Service() {
         return START_STICKY
     }
 
-//    override fun onBind(intent: Intent?): IBinder? = null
-
-//    private fun createEmptyNotification(): Notification {
-//        val intent = Intent(this, MainActivity::class.java)
-//        val pIntent = PendingIntent.getActivity(
-//            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
-//        )
-//
-//        return Notification.Builder(this, "music_channel")
-//            .setContentTitle("Music Player")
-//            .setContentText("Playing audio…")
-//            .setSmallIcon(android.R.drawable.ic_media_play)
-//            .setContentIntent(pIntent)
-//            .build()
-//    }
 
     // THIS IS API FOR UI BASICALLY
 
@@ -96,7 +64,6 @@ class MusicService : Service() {
         playerHolder.play(queue[currentIndex])
     }
 
-//    fun play(path: String) = playerHolder.play(path)
 
     fun pausePlayback() {
         playerHolder.pause()
@@ -145,37 +112,6 @@ class MusicService : Service() {
 
     // NOTIFICATION STUFF SO THAT APP DOES NOT BLOW ITSELF UP
 
-//    private fun createNotificationChannel() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                "music_channel",
-//                "Music Playback",
-//                NotificationManager.IMPORTANCE_LOW
-//            )
-//
-//            val manager = getSystemService(NotificationManager::class.java)
-//            manager.createNotificationChannel(channel)
-//        }
-//    }
-//    private fun createNotification(): Notification {
-//        val channelId = "music_channel"
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                channelId,
-//                "Music Playback",
-//                NotificationManager.IMPORTANCE_LOW
-//            )
-//            val manager = getSystemService(NotificationManager::class.java)
-//            manager.createNotificationChannel(channel)
-//        }
-//
-//        return NotificationCompat.Builder(this, channelId)
-//            .setContentTitle("Music Player")
-//            .setContentText("Playing audio…")
-//            .setSmallIcon(android.R.drawable.ic_media_play)
-//            .build()
-//    }
     private fun buildNotification(): Notification {
         val channelId = "music_playback"
 

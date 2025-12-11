@@ -4,6 +4,7 @@ import com.example.musicplayer.data.local.dao.PlaylistDao
 import com.example.musicplayer.data.local.dao.PlaylistWithSongs
 import com.example.musicplayer.data.local.entities.PlaylistEntity
 import com.example.musicplayer.data.local.entities.PlaylistSongCrossRef
+import com.example.musicplayer.data.local.entities.SongEntity
 import kotlinx.coroutines.flow.Flow
 class PlaylistRepositoryImpl (
     private val playlistDao: PlaylistDao
@@ -20,6 +21,11 @@ class PlaylistRepositoryImpl (
     suspend fun createPlaylist(name: String): Long {
         return playlistDao.insertPlaylist(PlaylistEntity(name = name))
     }
+    /** Returns a list with all songs in a playlist */
+    suspend fun getSongsFromPlaylist(playlistId: Long): List<SongEntity> {
+        return playlistDao.getSongsFromPlaylist(playlistId)
+    }
+
 
     /** Rename an existing playlist */
     suspend fun renamePlaylist(id: Long, newName: String) {
