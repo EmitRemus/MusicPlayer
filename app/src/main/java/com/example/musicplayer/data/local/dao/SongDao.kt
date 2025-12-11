@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.OnConflictStrategy
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import com.example.musicplayer.data.local.entities.SongEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -18,9 +19,20 @@ interface SongDao{
     @Query("SELECT * FROM songs WHERE path = :path LIMIT 1")
     suspend fun getSongByPath(path: String): SongEntity?
 
-    @Query("UPDATE songs SET title = :newTitle WHERE path = :path")
-    suspend fun renameSong(path: String, newTitle: String)
+    @Query("UPDATE songs SET title = :newTitle, artist = :newArtist WHERE path = :path")
+    suspend fun editSong(path: String, newTitle: String, newArtist: String)
 
     @Query("DELETE FROM songs")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM songs")
+    suspend fun getAllSongsNonFlowSuspend(): List<SongEntity>
+
+    @Query("DELETE FROM songs WHERE path IN (:paths)")
+    suspend fun deleteSongsByPaths(paths: Set<String>)
+
+    @Transaction
+    suspend fun runInTransaction(block: suspend () -> Unit) {
+        block()
+    }
 }
