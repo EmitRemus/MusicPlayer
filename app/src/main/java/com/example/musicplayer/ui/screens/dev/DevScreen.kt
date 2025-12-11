@@ -5,94 +5,84 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 @Composable
 fun DevScreen(
+    // SONGS
     onScanClicked: () -> Unit,
     onShowSongsClicked: () -> Unit,
-    onTestPlayClicked: () -> Unit,
-    onCreatePlaylistClicked: (String) -> Unit,
+
+    // PLAYLISTS
+    onCreatePlaylistClicked: () -> Unit,
     onShowPlaylistsClicked: () -> Unit,
-    onAddFirstSongToPlaylistClicked: () -> Unit,
+    onDeletePlaylistClicked: (Long) -> Unit,
+
+    // PLAYBACK
+//    onPlaySongClicked: () -> Unit,
     onPauseClicked: () -> Unit,
     onResumeClicked: () -> Unit,
+    onNextClicked: () -> Unit,
+    onPreviousClicked: () -> Unit,
+    onShowCurrentClicked: () -> Unit,
+    onTestPlayClicked: () -> Unit,
+    // LOG
     logOutput: String
 ){
+    var playlistIdInput by remember { mutableStateOf("") }
+    var songIdInput by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ){
         Text("Developer Test Screen", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(Modifier.height(16.dp))
+        // ================================
+        // SONG DATABASE
+        // ================================
+        Spacer(Modifier.height(14.dp))
+        Button(onClick = onScanClicked) { Text("Scan Music Folder") }
+        Button(onClick = onShowSongsClicked) { Text("Show Songs") }
 
-        Button(onClick = onScanClicked, modifier = Modifier.fillMaxWidth()) {
-            Text("Scan Music Folder")
-        }
+        // ================================
+        // PLAYLISTS
+        // ================================
+        Spacer(Modifier.height(20.dp))
+        Button(onClick = onCreatePlaylistClicked) { Text("Create Playlist") }
+        Button(onClick = onShowPlaylistsClicked) { Text("Show Playlists") }
 
-        Spacer(Modifier.height(8.dp))
-
-        Button(onClick = onShowSongsClicked, modifier = Modifier.fillMaxWidth()) {
-            Text("Show Songs from DB")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(onClick = onTestPlayClicked, modifier = Modifier.fillMaxWidth()) {
-            Text("Test Play First Song")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(
-            onClick = onPauseClicked,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Pause")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(
-            onClick = onResumeClicked,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Resume")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(onClick = { onCreatePlaylistClicked("MyPlaylist") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Create Playlist: MyPlaylist")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(onClick = onShowPlaylistsClicked, modifier = Modifier.fillMaxWidth()) {
-            Text("Show All Playlists")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(
-            onClick = onAddFirstSongToPlaylistClicked, modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Add FIRST song to Playlist 1")
-        }
-
-
-
-        Spacer(Modifier.height(16.dp))
-
-        Text("Logs:", style = MaterialTheme.typography.titleMedium)
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = logOutput,
-            modifier = Modifier.fillMaxWidth()
+        OutlinedTextField(
+            value = playlistIdInput,
+            onValueChange = { playlistIdInput = it },
+            label = { Text("Playlist ID") }
         )
+        Button(onClick = {
+            playlistIdInput.toLongOrNull()?.let { onDeletePlaylistClicked(it) }
+        }) { Text("Delete Playlist") }
+
+
+        // ================================
+        // PLAYBACK
+        // ================================
+        Spacer(Modifier.height(20.dp))
+
+
+        Button(onClick = onTestPlayClicked) { Text("Start first song") }
+        Button(onClick = onPauseClicked) { Text("Pause") }
+        Button(onClick = onResumeClicked) { Text("Resume") }
+        Button(onClick = onNextClicked) { Text("Next Track") }
+        Button(onClick = onPreviousClicked) { Text("Previous Track") }
+        Button(onClick = onShowCurrentClicked) { Text("Show Current Song") }
+
+        // ================================
+        // LOG OUTPUT
+        // ================================
+        Spacer(Modifier.height(20.dp))
+        Text("Logs:")
+        Text(logOutput)
 
     }
 }

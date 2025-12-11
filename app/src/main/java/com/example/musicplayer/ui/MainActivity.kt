@@ -29,15 +29,32 @@ class MainActivity : ComponentActivity() {
             val log by vm.log.collectAsState()
 
             DevScreen(
+                // SONG DB
                 onScanClicked = { vm.scanMusic() },
                 onShowSongsClicked = { vm.showAllSongs() },
-                onTestPlayClicked = { vm.testPlaySong() },
 
-                onCreatePlaylistClicked = { vm.createTestPlaylist() },
-                onShowPlaylistsClicked = { vm.showAllPlaylists() },
-                onAddFirstSongToPlaylistClicked = {vm.addFirstSongToPlaylist()},
-                onPauseClicked = { vm.pauseSong() },
-                onResumeClicked = { vm.resumeSong() },
+                // PLAYLISTS
+                onCreatePlaylistClicked = { vm.createPlaylist("New Playlist") },
+                onShowPlaylistsClicked = { vm.showPlaylists() },
+                onDeletePlaylistClicked = { id -> vm.deletePlaylist(id) },
+
+                // ADD SONG TO PLAYLIST
+//                onAddSongToPlaylistClicked = { songId, playlistId ->
+//                    vm.addSongToPlaylist(songId, playlistId)
+//                },
+
+                // PLAYBACK
+                onTestPlayClicked = {
+                    vm.playFirstSong()
+                },
+//                onPlaySongClicked = { vm.playSong(it) },
+                onPauseClicked = { vm.pausePlayback() },
+                onResumeClicked = { vm.resumePlayback() },
+                onNextClicked = { vm.nextTrack() },
+                onPreviousClicked = { vm.previousTrack() },
+                onShowCurrentClicked = { vm.showCurrentSong() },
+
+                // LOG OUTPUT
                 logOutput = log
             )
         }

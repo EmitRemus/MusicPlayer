@@ -1,27 +1,21 @@
 package com.example.musicplayer.ui.viewmodel
 
 import android.app.Application
-import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.example.musicplayer.data.local.database.AppDatabase
 import com.example.musicplayer.data.repository.PlaylistRepositoryImpl
 import com.example.musicplayer.data.repository.SongRepositoryImpl
+import com.example.musicplayer.data.scanner.FileScanner
+import com.example.musicplayer.player.exoplayer.PlayerHolder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import com.example.musicplayer.data.scanner.FileScanner
-import com.example.musicplayer.player.service.MusicService
-import com.example.musicplayer.player.service.MusicServiceHolder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.compose
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
 
 class DevViewModel(application: Application) : AndroidViewModel(application) {
+
     private val _log = MutableStateFlow("No logs yet.")
     val log = _log.asStateFlow()
 
@@ -34,138 +28,155 @@ class DevViewModel(application: Application) : AndroidViewModel(application) {
         .build()
 
     private val scanner = FileScanner(application)
+    private val songRepo = SongRepositoryImpl(db.songDao(), scanner)
     private val playlistRepo = PlaylistRepositoryImpl(db.playlistDao())
-    private val repository = SongRepositoryImpl(db.songDao(), scanner)
 
-//    private val vmScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val player = PlayerHolder(application)
 
-    private fun appendLog(text: String) {
-        _log.value = _log.value + "\n" + text
+    private fun append(msg: String) {
+        _log.value += "\n$msg"
     }
 
-
-    fun scanMusic() {
-        viewModelScope.launch {
-            appendLog("Scan started")
-                try {
-                    repository.refreshSongs()
-                    appendLog("Done! Songs inserted into database.")
-                } catch (e: Exception){
-                    appendLog("Error: ${e.message}")
-                }
-
-//            val songs = scanner.scanAndOrganize()
-//            appendLog("Found ${songs.size} songs:")
-//            songs.take(10).forEach {
-//                appendLog("${it.title} — ${it.artist}")
-//            }
-//
-//            if (songs.size > 10) appendLog("and more")
-        }
-    }
-
-    fun showAllSongs() {
-        viewModelScope.launch {
-            repository.getAllSongs().collect { list ->
-                appendLog("Songs in DB: ${list.size}")
-                list.forEach {
-                    appendLog("- ${it.title} | ${it.artist}")
-                }
-            }
-        }
-    }
-    fun testPlaySong() {
-        viewModelScope.launch {
-            val songs = repository.getAllSongs().first()
-            if (songs.isEmpty()) {
-                appendLog("No songs to play")
-                return@launch
-            }
-
-            val firstSongPath = songs.first().path
-
-            val intent = Intent(getApplication(), MusicService::class.java)
-            intent.putExtra("path", firstSongPath)
-
-            getApplication<Application>().startForegroundService(intent)
-
-            appendLog("Started playing: ${songs.first().title}")
-        }
-    }
-
-    fun pauseSong() {
+    // ================================================================
+    // SONG SCANNING
+    // ================================================================
+    fun scanMusic() = viewModelScope.launch {
+        append("Scan started")
         try {
-            MusicServiceHolder.service?.pausePlayback()
-            appendLog("Paused song")
+            songRepo.refreshSongs()
+            append("Scan finished. Songs inserted into DB.")
         } catch (e: Exception) {
-            appendLog("Error while pausing: ${e.message}")
+            append("Scan error: ${e.message}")
         }
     }
 
-    fun resumeSong() {
+    fun showAllSongs() = viewModelScope.launch {
+        songRepo.getAllSongs().collect { list ->
+            append("Songs in DB: ${list.size}")
+            list.forEach {
+                append("- ${it.path}: ${it.title} | ${it.artist}")
+            }
+        }
+    }
+
+    // ================================================================
+    // PLAYLIST MANAGEMENT
+    // ================================================================
+    fun createPlaylist(name: String) = viewModelScope.launch {
         try {
-            MusicServiceHolder.service?.resumePlayback()
-            appendLog("resumed song")
+            playlistRepo.createPlaylist(name)
+            append("Playlist created: $name")
         } catch (e: Exception) {
-            appendLog("Error while resuming: ${e.message}")
+            append("Error creating playlist: ${e.message}")
         }
     }
 
-    fun createTestPlaylist() {
-        viewModelScope.launch {
-            try {
-                val id = playlistRepo.createPlaylist("Test playlist")
-                appendLog("playlist created")
-            }catch (e: Exception){
-                appendLog("Playlist creation failed: ${e.message}")
+    fun showPlaylists() = viewModelScope.launch {
+        playlistRepo.getAllPlaylists().collect { lists ->
+
+            append("Playlists: ${lists.size}")
+
+            lists.forEach {
+                append("- ${it.playlistId}: ${it.name}")
             }
         }
     }
 
-    fun showAllPlaylists() {
-        viewModelScope.launch {
-            playlistRepo.getAllPlaylists().collect { list ->
-                appendLog("Playlists in DB: ${list.size}")
-                list.forEach {
-                    appendLog("- ${it.playlistId}: ${it.name}")
-                }
-            }
+
+    fun deletePlaylist(id: Long) = viewModelScope.launch {
+        try {
+            playlistRepo.deletePlaylist(id)
+            append("Playlist $id deleted")
+        } catch (e: Exception) {
+            append("Delete error: ${e.message}")
         }
     }
 
-    fun addFirstSongToPlaylist() {
-        viewModelScope.launch {
-            try {
-                val playlists = playlistRepo.getAllPlaylists().first()
-                if (playlists.isEmpty()) {
-                    appendLog("No playlists found.")
-                    return@launch
-                }
-
-                val playlist = playlists.first()
-                val playlistId = playlist.playlistId
-
-                try {
-                    val allSongs = repository.getAllSongs().first()
-
-                    if (allSongs.isEmpty()) {
-                        appendLog("No songs in DB, scan first!")
-                        return@launch
-                    }
-
-                    val firstSong = allSongs.first()
-                    playlistRepo.addSong(playlistId, firstSong.path)
-
-                    appendLog("Added: ${firstSong.title} to playlist $playlistId")
-                } catch (e: Exception) {
-                    appendLog("Error adding song: ${e.message}")
-                }
-            }catch (e: Exception) {
-                appendLog("Error adding song to playlist: ${e.message}")
-
-            }
-
+    fun renamePlaylist(id: Long, newName: String) = viewModelScope.launch {
+        try {
+            playlistRepo.renamePlaylist(id, newName)
+            append("Playlist $id renamed to $newName")
+        } catch (e: Exception) {
+            append("Rename error: ${e.message}")
         }
     }
 
+    fun addSongToPlaylist(songPath: String, playlistId: Long) = viewModelScope.launch {
+        try {
+            playlistRepo.addSong(playlistId, songPath)
+            append("Added $songPath → playlist $playlistId")
+        } catch (e: Exception) {
+            append("Add error: ${e.message}")
+        }
+    }
+
+    fun showSongsFromPlaylist(playlistId: Long) = viewModelScope.launch {
+        try {
+            playlistRepo.getPlaylistWithSongs(playlistId).collect { pl ->
+
+                append("Playlist ${pl.playlist.name}: ${pl.songs.size} songs")
+
+                pl.songs.forEach { s ->
+                    append("- ${s.title} (${s.artist})")
+                }
+            }
+        } catch (e: Exception) {
+            append("Error: ${e.message}")
+        }
+    }
+
+    // ================================================================
+    // PLAYER CONTROLS
+    // ================================================================
+
+    fun playFirstSong() = viewModelScope.launch {
+        val songs = songRepo.getAllSongs().firstOrNull()
+
+        if (songs == null || songs.isEmpty()) {
+            append("No songs in DB. Scan first!")
+            return@launch
+        }
+
+        val first = songs.first()
+        append("Playing first song: ${first.title}")
+        player.play(first.path)
+    }
+    fun playSong(songPath: String) {
+        append("Playing: $songPath")
+        player.play(songPath)
+    }
+
+    fun pausePlayback() {
+        player.pause()
+        append("Paused playback.")
+    }
+
+    fun resumePlayback() {
+        player.resume()
+        append("Resumed playback.")
+    }
+
+    fun stopPlayback() {
+        player.stop()
+        append("Stopped playback.")
+    }
+
+    fun nextTrack() {
+        player.nextInQueue()
+        append("Next track")
+    }
+
+    fun previousTrack() {
+        player.previousInQueue()
+        append("Previous track")
+    }
+
+    fun showCurrentSong() {
+        val meta = player.currentMetadata.value
+        if (meta != null) {
+            append("Now playing: ${meta.title} by ${meta.artist}")
+        } else {
+            append("No song playing.")
+        }
+    }
 }

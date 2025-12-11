@@ -9,10 +9,20 @@ class SongRepositoryImpl (
     private val songDao: SongDao,
     private val fileScanner: FileScanner
 ) {
-    fun getAllSongs(): Flow<List<SongEntity>> {
-        return songDao.getAllSongs()
+    /** Flow for displaying all songs in UI */
+    fun getAllSongs(): Flow<List<SongEntity>> = songDao.getAllSongs()
+
+    /** For a details screen or to get a specific song by its path */
+    suspend fun getSongByPath(path: String): SongEntity? = songDao.getSongByPath(path)
+
+    suspend fun renameSong(path: String, newTitle: String) {
+        songDao.renameSong(path, newTitle)
     }
 
+    /**
+     * Full rescan: scans device, maps to SongEntity,
+     * wipes old table, inserts new songs.
+     */
     suspend fun refreshSongs() {
         val scanned = fileScanner.scanAndOrganize()
 
