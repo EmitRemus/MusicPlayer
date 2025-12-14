@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -44,7 +45,8 @@ fun PlaylistScreen(
     onSongAdd: (String, List<Long>) -> Unit,
     onPlaylistUpdate: (PlaylistEntity) -> Unit,
     onPlaylistDelete: (Long) -> Unit,
-    onOpenPlayer: (SongEntity) -> Unit
+    onPlaylistPlay: (List<SongEntity>) -> Unit,
+    onSongPlay: (SongEntity) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -54,10 +56,15 @@ fun PlaylistScreen(
             TopAppBar(
                 title = { Text(playlist.name) },
                 actions = {
+                    IconButton (onClick = { onPlaylistPlay(songs) } ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Listen")
+                    }
+
                     Box {
                         IconButton (onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Edit Playlist")
                         }
+
                         DropdownMenu (
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
@@ -88,7 +95,7 @@ fun PlaylistScreen(
             items(songs) { song ->
                 Song(
                     song = song,
-                    onPlay = { onOpenPlayer(song) },
+                    onPlay = { onSongPlay(song) },
                     onUpdate = onSongUpdate,
                     onAdd = onSongAdd,
                 )

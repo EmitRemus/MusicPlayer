@@ -71,12 +71,13 @@ fun MusicAppNavHost() {
                     songs = playlistSongs,
                     onSongUpdate = { song -> songsVM.editSong(song) },
                     onSongAdd = { path, lists -> playlistsVM.addSongToPlaylists(path, lists) },
-                    onOpenPlayer = { song -> playerVM.play(song) },
+                    onSongPlay = { song -> playerVM.play(song) },
                     onPlaylistDelete = {
                         playlistsVM.deletePlaylist(id)
                         nav.popBackStack()
                     },
-                    onPlaylistUpdate = { p -> playlistsVM.renamePlaylist(p.playlistId, p.name) }
+                    onPlaylistUpdate = { p -> playlistsVM.renamePlaylist(p.playlistId, p.name) },
+                    onPlaylistPlay = { songs -> playerVM.playPlaylist(songs) }
                 )
             }
         }

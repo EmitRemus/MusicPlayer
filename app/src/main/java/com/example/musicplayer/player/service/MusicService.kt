@@ -8,22 +8,42 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import androidx.compose.runtime.collectAsState
 import androidx.core.app.NotificationCompat
 import com.example.musicplayer.data.local.entities.SongEntity
+import com.example.musicplayer.player.exoplayer.NowPlayingMetadata
 import com.example.musicplayer.player.exoplayer.PlayerHolder
 import com.example.musicplayer.ui.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class MusicService : Service() {
 
     private lateinit var playerHolder: PlayerHolder
-
+    private val serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
     private val queue: MutableList<SongEntity> = mutableListOf()
     private var currentIndex: Int = -1
 
+    private val _metadata = MutableStateFlow<NowPlayingMetadata?>(null)
+    val metadata: StateFlow<NowPlayingMetadata?> get() = _metadata
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> get() = _isPlaying
 
     override fun onCreate() {
         super.onCreate()
         playerHolder = PlayerHolder(this)
+
+        serviceScope.launch {
+            playerHolder.currentMetadata.collect { newMetadata ->
+                _metadata.value = newMetadata
+            }
+        }
+
         MusicServiceHolder.service = this
     }
 
@@ -53,6 +73,7 @@ class MusicService : Service() {
         queue.add(song)
         currentIndex = 0
         playerHolder.play(song)
+        _isPlaying.value = true
     }
 
     /** Play a list of songs as a queue starting from [startIndex] */
@@ -62,20 +83,23 @@ class MusicService : Service() {
         queue.addAll(songs)
         currentIndex = startIndex.coerceIn(0, queue.lastIndex)
         playerHolder.play(queue[currentIndex])
+        _isPlaying.value = true
     }
-
 
     fun pausePlayback() {
         playerHolder.pause()
+        _isPlaying.value = false
     }
     fun resumePlayback() {
         playerHolder.resume()
+        _isPlaying.value = true
     }
 
     fun stopPlayback() {
         playerHolder.stop()
         // Detach foreground state, keep service alive
         stopForeground(STOP_FOREGROUND_DETACH)
+        _isPlaying.value = false
     }
 
     fun next() {
