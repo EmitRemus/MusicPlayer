@@ -1,25 +1,43 @@
 package com.example.musicplayer.ui.viewmodel
 
 import android.app.Application
-import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
-import com.example.musicplayer.player.service.MusicService
-import com.example.musicplayer.player.service.MusicServiceHolder
+import com.example.musicplayer.data.local.entities.SongEntity
+import com.example.musicplayer.player.exoplayer.NowPlayingMetadata
+import com.example.musicplayer.player.exoplayer.PlayerHolder
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
-    private val context = application
+    private val player = PlayerHolder(application)
+    val metadata: StateFlow<NowPlayingMetadata> = player.currentMetadata
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying = _isPlaying.asStateFlow()
 
-    fun play(path: String) {
-        val intent = Intent(context, MusicService::class.java)
-        intent.putExtra("path", path)
-        context.startForegroundService(intent)
+    fun play(song: SongEntity) {
+        player.play(song)
+        _isPlaying.value = true
     }
 
     fun pause() {
-        MusicServiceHolder.service?.pausePlayback()
+        player.pause()
+        _isPlaying.value = false
     }
 
     fun resume() {
-        MusicServiceHolder.service?.resumePlayback()
+        player.resume()
+        _isPlaying.value = true
+    }
+
+    fun next() = player.nextInQueue()
+    fun previous() = player.previousInQueue()
+
+    override fun onCleared() {
+        super.onCleared()
+        player.release()
     }
 }
+
+
+

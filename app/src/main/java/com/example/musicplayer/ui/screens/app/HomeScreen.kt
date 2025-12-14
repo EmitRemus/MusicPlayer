@@ -35,25 +35,18 @@ import com.example.musicplayer.ui.composables.Song
 
 @Composable
 fun HomeScreen(
+    songs: List<SongEntity>,
     playlists: List<PlaylistEntity>,
-    recentlyAdded: List<SongEntity>,
     onOpenPlaylist: (Long) -> Unit,
-    onOpenPlayer: (SongEntity) -> Unit,
     onCreatePlaylist: (String) -> Unit,
-    onOpenDev: () -> Unit,
-    onSongUpdate: (SongEntity) -> Unit
+    onSongUpdate: (SongEntity) -> Unit,
+    onSongAdd: (String, List<Long>) -> Unit,
+    onSongPlay: (SongEntity) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var playlistName by remember { mutableStateOf("") }
 
     LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
-        item {
-            Text(
-                "Dev panel", style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.clickable { onOpenDev() }
-            )
-        }
-
         item {
             Text("Your Playlists", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(12.dp))
@@ -105,11 +98,12 @@ fun HomeScreen(
             Spacer(Modifier.height(12.dp))
         }
 
-        items(recentlyAdded) { song ->
+        items(songs) { song ->
             Song(
                 song = song,
-                onPlay = {},
-                onUpdate = onSongUpdate
+                onPlay = { onSongPlay(song) },
+                onUpdate = onSongUpdate,
+                onAdd = onSongAdd
             )
         }
     }

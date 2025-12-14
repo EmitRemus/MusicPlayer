@@ -17,7 +17,7 @@ class MusicService : Service() {
 
     private lateinit var playerHolder: PlayerHolder
 
-    private val queue: MutableList<String> = mutableListOf()
+    private val queue: MutableList<SongEntity> = mutableListOf()
     private var currentIndex: Int = -1
 
 
@@ -48,18 +48,18 @@ class MusicService : Service() {
     // THIS IS API FOR UI BASICALLY
 
     /** Play a single song and reset the queue */
-    fun playSong(path: String) {
+    fun playSong(song: SongEntity) {
         queue.clear()
-        queue.add(path)
+        queue.add(song)
         currentIndex = 0
-        playerHolder.play(path)
+        playerHolder.play(song)
     }
 
     /** Play a list of songs as a queue starting from [startIndex] */
-    fun playQueue(paths: List<String>, startIndex: Int = 0) {
-        if (paths.isEmpty()) return
+    fun playQueue(songs: List<SongEntity>, startIndex: Int = 0) {
+        if (songs.isEmpty()) return
         queue.clear()
-        queue.addAll(paths)
+        queue.addAll(songs)
         currentIndex = startIndex.coerceIn(0, queue.lastIndex)
         playerHolder.play(queue[currentIndex])
     }

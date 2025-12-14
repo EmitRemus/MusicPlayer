@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.example.musicplayer.data.local.database.AppDatabase
+import com.example.musicplayer.data.local.entities.SongEntity
 import com.example.musicplayer.data.repository.PlaylistRepositoryImpl
 import com.example.musicplayer.data.repository.SongRepositoryImpl
 import com.example.musicplayer.data.scanner.FileScanner
@@ -139,11 +140,11 @@ class DevViewModel(application: Application) : AndroidViewModel(application) {
 
         val first = songs.first()
         append("Playing first song: ${first.title}")
-        player.play(first.path)
+        player.play(first)
     }
-    fun playSong(songPath: String) {
-        append("Playing: $songPath")
-        player.play(songPath)
+    fun playSong(song: SongEntity) {
+        append("Playing: ${song.path}")
+        player.play(song)
     }
 
     fun pausePlayback() {

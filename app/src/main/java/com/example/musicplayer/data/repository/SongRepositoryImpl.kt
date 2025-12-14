@@ -17,8 +17,8 @@ class SongRepositoryImpl (
     /** For a details screen or to get a specific song by its path */
     suspend fun getSongByPath(path: String): SongEntity? = songDao.getSongByPath(path)
 
-    suspend fun editSong(path: String, newTitle: String, newArtist: String) {
-        songDao.editSong(path, newTitle, newArtist)
+    suspend fun editSong(path: String, newTitle: String, newArtist: String, newAlbum: String) {
+        songDao.editSong(path, newTitle, newArtist, newAlbum)
     }
 
     /** Full rescan: scans device, maps to SongEntity, wipes old table, inserts new songs */

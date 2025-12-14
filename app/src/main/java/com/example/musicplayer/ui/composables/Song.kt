@@ -1,100 +1,129 @@
 package com.example.musicplayer.ui.composables
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.musicplayer.data.local.entities.SongEntity
+
+fun formatDuration(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
+}
 
 @Composable
 fun Song(
     song: SongEntity,
     onPlay: () -> Unit,
     onUpdate: (SongEntity) -> Unit,
+    onAdd: (String, List<Long>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
-    var title by remember { mutableStateOf(song.title) }
-    var artist by remember { mutableStateOf(song.artist) }
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(vertical = 4.dp, horizontal = 8.dp)
                 .clickable { onPlay() },
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
-                Text(song.title, style = MaterialTheme.typography.titleMedium)
-                Text(song.artist, style = MaterialTheme.typography.bodySmall)
+            Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                Text(
+                    text = song.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "${song.artist} - ${song.album}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = formatDuration(song.duration),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
 
-            IconButton(onClick = { showEditDialog = true }) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit Song")
+            IconButton(onClick = onPlay) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play song"
+                )
+            }
+
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Song options"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Add to Playlist") },
+                        leadingIcon = { Icon(Icons.Default.Add, null) },
+                        onClick = {
+                            showMenu = false
+                            showPlaylistDialog = true
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Edit Song Metadata") },
+                        leadingIcon = { Icon(Icons.Default.Edit, null) },
+                        onClick = {
+                            showMenu = false
+                            showEditDialog = true
+                        }
+                    )
+                }
             }
         }
 
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            thickness = DividerDefaults.Thickness,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
     }
 
     if (showEditDialog) {
-        AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = { Text("Edit Song") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Song Name") }
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = artist,
-                        onValueChange = { artist = it },
-                        label = { Text("Artist") }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton (onClick = {
-                    onUpdate(song.copy(title = title, artist = artist))
-                    showEditDialog = false
-                }) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
+        EditSongAlert(song, onHide = { showEditDialog = false }, onProceed = onUpdate)
+    }
+
+    if (showPlaylistDialog) {
+        AddToPlaylistDialog(song, onHide = { showPlaylistDialog = false }, onProceed = onAdd)
     }
 }
-

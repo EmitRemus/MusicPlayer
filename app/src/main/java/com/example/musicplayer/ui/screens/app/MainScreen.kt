@@ -1,15 +1,17 @@
 package com.example.musicplayer.ui.screens.app
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.musicplayer.ui.screens.dev.DevScreen
-import com.example.musicplayer.ui.viewmodel.DevViewModel
+import com.example.musicplayer.ui.composables.BottomPlayer
 import com.example.musicplayer.ui.viewmodel.PlayerViewModel
 import com.example.musicplayer.ui.viewmodel.PlaylistsViewModel
 import com.example.musicplayer.ui.viewmodel.SongsViewModel
@@ -18,93 +20,67 @@ import com.example.musicplayer.ui.viewmodel.SongsViewModel
 fun MusicAppNavHost() {
     val nav = rememberNavController()
 
-    val songsVM: SongsViewModel = viewModel ()
+    val songsVM: SongsViewModel = viewModel()
     val playlistsVM: PlaylistsViewModel = viewModel()
     val playerVM: PlayerViewModel = viewModel()
-    val devVM: DevViewModel = viewModel ()
-    val log by devVM.log.collectAsState()
 
     val songs by songsVM.songs.collectAsState()
     val playlists by playlistsVM.playlists.collectAsState()
 
-    NavHost(nav, startDestination = "home") {
-        composable ("dev") {
-            DevScreen(
-                // SONG DB
-                onScanClicked = { devVM.scanMusic() },
-                onShowSongsClicked = { devVM.showAllSongs() },
+    val metadata by playerVM.metadata.collectAsState()
+    val isPlaying by playerVM.isPlaying.collectAsState()
 
-                // PLAYLISTS
-                onCreatePlaylistClicked = { devVM.createPlaylist("New Playlist") },
-                onShowPlaylistsClicked = { devVM.showPlaylists() },
-                onDeletePlaylistClicked = { id -> devVM.deletePlaylist(id) },
-
-                // ADD SONG TO PLAYLIST
-//                onAddSongToPlaylistClicked = { songId, playlistId ->
-//                    vm.addSongToPlaylist(songId, playlistId)
-//                },
-
-                // PLAYBACK
-                onTestPlayClicked = {
-                    devVM.playFirstSong()
-                },
-//                onPlaySongClicked = { vm.playSong(it) },
-                onPauseClicked = { devVM.pausePlayback() },
-                onResumeClicked = { devVM.resumePlayback() },
-                onNextClicked = { devVM.nextTrack() },
-                onPreviousClicked = { devVM.previousTrack() },
-                onShowCurrentClicked = { devVM.showCurrentSong() },
-
-                // LOG OUTPUT
-                logOutput = log
+    Scaffold(
+        bottomBar = {
+            BottomPlayer(
+                metadata = metadata,
+                isPlaying = isPlaying,
+                onPause = { playerVM.pause() },
+                onResume = { playerVM.resume() },
+                onNext = { playerVM.next() },
+                onPrevious = { playerVM.previous() }
             )
         }
-
-        composable("home") {
-            HomeScreen(
-                playlists = playlists,
-                recentlyAdded = songs.takeLast(10),
-                onOpenPlaylist = { id -> nav.navigate("playlist/$id") },
-                onCreatePlaylist = { name -> playlistsVM.createPlaylist(name) },
-                onOpenPlayer = { song ->
-                    playerVM.play(song.path)
-                    nav.navigate("player/${song.path}")
-                },
-                onOpenDev = { nav.navigate("dev") },
-                onSongUpdate = { song -> songsVM.editSong(song) }
-            )
-        }
-
-        composable("songs") {
-            SongsScreen(
-                songs = songs,
-                onOpenPlayer = { song ->
-                    playerVM.play(song.path)
-                    nav.navigate("player/${song.path}")
-                }
-            )
-        }
-
-        composable("playlist/{id}") { entry ->
-            val id = entry.arguments?.getString("id")!!.toLong()
-
-            LaunchedEffect (id) {
-                // load playlist songs
+    ) { innerPadding ->
+        NavHost(
+            navController = nav,
+            startDestination = "home",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("home") {
+                HomeScreen(
+                    songs = songs,
+                    playlists = playlists,
+                    onOpenPlaylist = { id -> nav.navigate("playlist/$id") },
+                    onCreatePlaylist = { name -> playlistsVM.createPlaylist(name) },
+                    onSongPlay = { song -> playerVM.play(song) },
+                    onSongUpdate = { song -> songsVM.editSong(song) },
+                    onSongAdd = { path, lists -> playlistsVM.addSongToPlaylists(path, lists) }
+                )
             }
 
-            // TODO load songs from playlistsVM.getSongsInPlaylist(id)
-        }
+            composable("playlist/{id}") { entry ->
+                val id = entry.arguments?.getString("id")?.toLongOrNull() ?: return@composable
+                val playlist = playlists.find { it.playlistId == id } ?: return@composable
+                val playlistSongs by playlistsVM.playlistSongs.collectAsState()
 
-        composable("player/{path}") { entry ->
-            val path = entry.arguments?.getString("path")
-            val song = songs.find { it.path == path }
+                LaunchedEffect(id) { playlistsVM.getSongsInPlaylist(id) }
 
-            PlayerScreen(
-                song = song,
-                onPause = { playerVM.pause() },
-                onResume = { playerVM.resume() }
-            )
+                PlaylistScreen(
+                    playlist = playlist,
+                    songs = playlistSongs,
+                    onSongUpdate = { song -> songsVM.editSong(song) },
+                    onSongAdd = { path, lists -> playlistsVM.addSongToPlaylists(path, lists) },
+                    onOpenPlayer = { song -> playerVM.play(song) },
+                    onPlaylistDelete = {
+                        playlistsVM.deletePlaylist(id)
+                        nav.popBackStack()
+                    },
+                    onPlaylistUpdate = { p -> playlistsVM.renamePlaylist(p.playlistId, p.name) }
+                )
+            }
         }
     }
 }
+
 

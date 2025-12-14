@@ -12,7 +12,8 @@ import androidx.media3.common.Player
 
 data class NowPlayingMetadata(
     val title: String = "Unknown",
-    val artist: String = "Unknown"
+    val artist: String = "Unknown",
+    val album: String = "Unknown"
 )
 
 class PlayerHolder(context: Context){
@@ -36,20 +37,20 @@ class PlayerHolder(context: Context){
         })
     }
 
-    fun play(path: String) {
-        val mediaItem = MediaItem.fromUri(Uri.parse(path))
+    fun play(song: SongEntity) {
+        val mediaItem = MediaItem.fromUri(Uri.parse(song.path))
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.play()
 
-        updateMetadata(mediaItem)
+        updateMetadata(mediaItem, song)
     }
     /** This plays back a list of songs for playing the whole playlist see getSongsFromPlaylist func */
     fun playWholePlaylist(songs: List<SongEntity>) {
         if (songs.isEmpty()) return
         _queue.value = songs
         currentIndex = 0
-        play(songs.first().path)
+        play(songs.first())
     }
 
 
@@ -63,7 +64,7 @@ class PlayerHolder(context: Context){
         if (songs.isEmpty()) return
 
         currentIndex = (currentIndex + 1) % songs.size
-        play(songs[currentIndex].path)
+        play(songs[currentIndex])
     }
 
     fun previousInQueue() {
@@ -71,7 +72,7 @@ class PlayerHolder(context: Context){
         if (songs.isEmpty()) return
 
         currentIndex = if (currentIndex == 0) songs.lastIndex else currentIndex - 1
-        play(songs[currentIndex].path)
+        play(songs[currentIndex])
     }
 
     fun seekTo(position: Long) = exoPlayer.seekTo(position)
@@ -80,11 +81,12 @@ class PlayerHolder(context: Context){
 
     fun getCurrentPosition(): Long = exoPlayer.currentPosition
 
-    private fun updateMetadata(mediaItem: MediaItem) {
-        val title = mediaItem.mediaMetadata.title?.toString() ?: "Unknown title"
-        val artist = mediaItem.mediaMetadata.artist?.toString() ?: "Unknown artist"
+    private fun updateMetadata(mediaItem: MediaItem, song: SongEntity) {
+        val title = song.title ?: mediaItem.mediaMetadata.title?.toString() ?: "Unknown title"
+        val artist = song.artist ?: mediaItem.mediaMetadata.artist?.toString() ?: "Unknown artist"
+        val album = song.album ?: mediaItem.mediaMetadata.albumTitle?.toString() ?: "Unknown album"
 
-        _currentMetadata.value = NowPlayingMetadata(title, artist)
+        _currentMetadata.value = NowPlayingMetadata(title, artist, album)
     }
     fun getDuration(): Long = exoPlayer.duration
 
@@ -92,7 +94,7 @@ class PlayerHolder(context: Context){
         _queue.value = songs
         currentIndex = startIndex
         if (songs.isNotEmpty()) {
-            play(songs[startIndex].path)
+            play(songs[startIndex])
         }
     }
 
@@ -127,7 +129,7 @@ class PlayerHolder(context: Context){
         val songs = _queue.value
         if (index in songs.indices) {
             currentIndex = index
-            play(songs[index].path)
+            play(songs[index])
         }
     }
 

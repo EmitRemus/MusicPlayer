@@ -19,8 +19,8 @@ interface SongDao{
     @Query("SELECT * FROM songs WHERE path = :path LIMIT 1")
     suspend fun getSongByPath(path: String): SongEntity?
 
-    @Query("UPDATE songs SET title = :newTitle, artist = :newArtist WHERE path = :path")
-    suspend fun editSong(path: String, newTitle: String, newArtist: String)
+    @Query("UPDATE songs SET title = :newTitle, artist = :newArtist, album = :newAlbum WHERE path = :path")
+    suspend fun editSong(path: String, newTitle: String, newArtist: String, newAlbum: String)
 
     @Query("DELETE FROM songs")
     suspend fun deleteAll()

@@ -36,7 +36,7 @@ class SongsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun editSong(song: SongEntity) {
         viewModelScope.launch {
-            repo.editSong(song.path, song.title, song.artist)
+            repo.editSong(song.path, song.title, song.artist, song.album ?: "")
         }
     }
 }
