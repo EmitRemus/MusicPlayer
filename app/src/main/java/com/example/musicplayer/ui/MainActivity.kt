@@ -11,10 +11,25 @@ import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 import com.example.musicplayer.player.service.MusicService
 import com.example.musicplayer.player.service.MusicServiceHolder
+import com.example.musicplayer.theme.DarkScheme
+import com.example.musicplayer.theme.Typography
 import com.example.musicplayer.ui.screens.app.MusicAppNavHost
+
+@Composable
+fun MusicPlayerAppTheme(
+    content: @Composable () -> Unit
+) {
+    MaterialTheme(
+        colorScheme = DarkScheme,
+        typography = Typography,
+        content = content
+    )
+}
 
 class MainActivity : ComponentActivity() {
     private val connection = object : ServiceConnection {
@@ -53,7 +68,9 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            MusicAppNavHost()
+            MusicPlayerAppTheme {
+                MusicAppNavHost()
+            }
         }
     }
 }
