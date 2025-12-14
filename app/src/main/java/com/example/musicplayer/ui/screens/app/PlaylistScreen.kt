@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -45,8 +46,7 @@ fun PlaylistScreen(
     onSongAdd: (String, List<Long>) -> Unit,
     onPlaylistUpdate: (PlaylistEntity) -> Unit,
     onPlaylistDelete: (Long) -> Unit,
-    onPlaylistPlay: (List<SongEntity>) -> Unit,
-    onSongPlay: (SongEntity) -> Unit
+    onPlaylistPlay: (List<SongEntity>, Int) -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -56,7 +56,7 @@ fun PlaylistScreen(
             TopAppBar(
                 title = { Text(playlist.name) },
                 actions = {
-                    IconButton (onClick = { onPlaylistPlay(songs) } ) {
+                    IconButton (onClick = { onPlaylistPlay(songs, 0) } ) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "Listen")
                     }
 
@@ -92,10 +92,10 @@ fun PlaylistScreen(
         }
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            items(songs) { song ->
+            itemsIndexed(songs) { index, song ->
                 Song(
                     song = song,
-                    onPlay = { onSongPlay(song) },
+                    onPlay = { onPlaylistPlay(songs, index) },
                     onUpdate = onSongUpdate,
                     onAdd = onSongAdd,
                 )

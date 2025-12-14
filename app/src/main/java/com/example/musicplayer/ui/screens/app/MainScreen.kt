@@ -27,19 +27,9 @@ fun MusicAppNavHost() {
     val songs by songsVM.songs.collectAsState()
     val playlists by playlistsVM.playlists.collectAsState()
 
-    val metadata by playerVM.metadata.collectAsState()
-    val isPlaying by playerVM.isPlaying.collectAsState()
-
     Scaffold(
         bottomBar = {
-            BottomPlayer(
-                metadata = metadata,
-                isPlaying = isPlaying,
-                onPause = { playerVM.pause() },
-                onResume = { playerVM.resume() },
-                onNext = { playerVM.next() },
-                onPrevious = { playerVM.previous() }
-            )
+            BottomPlayer(vm = playerVM)
         }
     ) { innerPadding ->
         NavHost(
@@ -53,7 +43,7 @@ fun MusicAppNavHost() {
                     playlists = playlists,
                     onOpenPlaylist = { id -> nav.navigate("playlist/$id") },
                     onCreatePlaylist = { name -> playlistsVM.createPlaylist(name) },
-                    onSongPlay = { song -> playerVM.play(song) },
+                    onPlaylistPlay = { songs, index -> playerVM.playPlaylist(songs, index) },
                     onSongUpdate = { song -> songsVM.editSong(song) },
                     onSongAdd = { path, lists -> playlistsVM.addSongToPlaylists(path, lists) }
                 )
@@ -71,13 +61,12 @@ fun MusicAppNavHost() {
                     songs = playlistSongs,
                     onSongUpdate = { song -> songsVM.editSong(song) },
                     onSongAdd = { path, lists -> playlistsVM.addSongToPlaylists(path, lists) },
-                    onSongPlay = { song -> playerVM.play(song) },
                     onPlaylistDelete = {
                         playlistsVM.deletePlaylist(id)
                         nav.popBackStack()
                     },
                     onPlaylistUpdate = { p -> playlistsVM.renamePlaylist(p.playlistId, p.name) },
-                    onPlaylistPlay = { songs -> playerVM.playPlaylist(songs) }
+                    onPlaylistPlay = { songs, index -> playerVM.playPlaylist(songs, index) }
                 )
             }
         }

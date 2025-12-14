@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -39,9 +40,9 @@ fun HomeScreen(
     playlists: List<PlaylistEntity>,
     onOpenPlaylist: (Long) -> Unit,
     onCreatePlaylist: (String) -> Unit,
+    onPlaylistPlay: (List<SongEntity>, Int) -> Unit,
     onSongUpdate: (SongEntity) -> Unit,
     onSongAdd: (String, List<Long>) -> Unit,
-    onSongPlay: (SongEntity) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var playlistName by remember { mutableStateOf("") }
@@ -98,10 +99,10 @@ fun HomeScreen(
             Spacer(Modifier.height(12.dp))
         }
 
-        items(songs) { song ->
+        itemsIndexed(songs) { index, song ->
             Song(
                 song = song,
-                onPlay = { onSongPlay(song) },
+                onPlay = { onPlaylistPlay(songs, index) },
                 onUpdate = onSongUpdate,
                 onAdd = onSongAdd
             )
